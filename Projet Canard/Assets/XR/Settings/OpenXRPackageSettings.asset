@@ -420,7 +420,7 @@ MonoBehaviour:
   m_Name: WebGL
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRSettings
   features:
-  - {fileID: -8156986526707331283}
+  - {fileID: -7334136318745901707}
   customLoaderName: 
   m_renderMode: 1
   m_latencyOptimization: 0
@@ -632,7 +632,7 @@ MonoBehaviour:
   m_Name: WebGL
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.OpenXRSettings
   features:
-  - {fileID: -4045304574783647397}
+  - {fileID: 0}
   customLoaderName: 
   m_renderMode: 1
   m_latencyOptimization: 0

@@ -6,7 +6,7 @@ public class TriggerDistant : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if (other.CompareTag("MainCamera"))
         {
             audioSource.Play();
         }

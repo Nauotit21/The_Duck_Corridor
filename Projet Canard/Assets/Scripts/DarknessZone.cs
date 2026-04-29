@@ -24,6 +24,12 @@ public class DarknessZone : MonoBehaviour
     private static readonly int LookDirectionProp = Shader.PropertyToID("_LookDirection");
     private static readonly int LookBonusProp     = Shader.PropertyToID("_LookBonus");
     private static readonly int LookSharpnessProp = Shader.PropertyToID("_LookSharpness");
+    [Header("Dégradé progressif")]
+    [Range(0.3f, 5f)] public float fogCurve = 2.0f;
+
+    private static readonly int FogCurveProp = Shader.PropertyToID("_FogCurve");
+
+
 
     void Start()
     {
@@ -41,5 +47,7 @@ public class DarknessZone : MonoBehaviour
         _mat.SetVector(LookDirectionProp, playerHead.forward);
         _mat.SetFloat(LookBonusProp,     lookBonus);
         _mat.SetFloat(LookSharpnessProp, lookSharpness);
+
+        _mat.SetFloat(FogCurveProp, fogCurve);
     }
 }

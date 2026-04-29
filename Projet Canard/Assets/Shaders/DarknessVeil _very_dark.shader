@@ -1,4 +1,4 @@
-Shader "Custom/DarknessVeil"
+Shader "Custom/DarknessVeilVeryDark"
 {
     Properties
     {
@@ -7,13 +7,10 @@ Shader "Custom/DarknessVeil"
         _DarknessColor ("Couleur ténèbres",         Color) = (0, 0, 0, 1)
         _NoiseScale    ("Bruit (ondulation)",        Float) = 2.0
         _NoiseStrength ("Force du bruit",           Float) = 0.15
-    
+        // ✅ Nouveaux paramètres directionnels
         _LookDirection ("Direction du regard",      Vector) = (0, 0, 1, 0)
         _LookBonus     ("Bonus rayon (regard)",     Float) = 2.0
         _LookSharpness ("Netteté du cône",          Float) = 4.0
-
-        _FogCurve ("Courbe du brouillard", Float) = 2.0
-
     }
 
     SubShader
@@ -56,8 +53,6 @@ Shader "Custom/DarknessVeil"
             float4 _DarknessColor;
             float4 _LookDirection;
 
-            float _FogCurve;
-
             float noise(float3 p)
             {
                 return frac(sin(dot(p, float3(127.1, 311.7, 74.2))) * 43758.5);
@@ -79,22 +74,23 @@ Shader "Custom/DarknessVeil"
 
                 float3 center = UNITY_MATRIX_M._m03_m13_m23;
                 float3 toFrag = IN.positionWS - center;
-                float  dist   = length(toFrag);
+                float dist    = length(toFrag);
                 float3 dir    = toFrag / (dist + 0.0001);
 
-                float3 lookDir   = normalize(_LookDirection.xyz);
-                float  dotLook   = dot(dir, lookDir);
-                float  lookFactor = saturate(pow(max(dotLook, 0.0), _LookSharpness));
+                // ✅ Dot product entre la direction du fragment et le regard
+                float3 lookDir  = normalize(_LookDirection.xyz);
+                float  dotLook  = dot(dir, lookDir);
 
-                float n = noise(IN.positionWS * _NoiseScale) * _NoiseStrength;
+                // ✅ Facteur directionnel : 1 devant, 0 derrière
+                // _LookSharpness contrôle la largeur du cône
+                float lookFactor = saturate(pow(max(dotLook, 0.0), _LookSharpness));
 
-                float maxRadius = _OuterRadius + (_LookBonus * lookFactor) + n;
+                // ✅ Rayon intérieur étendu dans la direction du regard
+                float n       = noise(IN.positionWS * _NoiseScale) * _NoiseStrength;
+                float innerR  = _InnerRadius + n + (_LookBonus * lookFactor);
 
-                
-                float alpha = saturate(dist / maxRadius);
-
-                
-                alpha = pow(alpha, _FogCurve);
+                float alpha = saturate((dist - innerR) / (_OuterRadius - innerR));
+                alpha = smoothstep(0.0, 1.0, alpha);
 
                 return half4(_DarknessColor.rgb, alpha * _DarknessColor.a);
             }

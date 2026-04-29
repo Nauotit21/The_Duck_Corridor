@@ -11,11 +11,13 @@ public class GhostObject : MonoBehaviour
     [Header("Détection regard")]
     public float detectionAngle = 15f;
 
-    [Header("Feedback")]
+    [Header("Feedback Visuel")]
     public float fadeOutDuration = 0.3f;
+    public GameObject ghostVisual;
 
-    [Header("Références")]
-    public GameObject ghostVisual; // glisse le GhostQuad ici dans l'Inspector
+    [Header("Feedback Sonore")]
+    public AudioSource audioSource;    // Glisse l'AudioSource ici
+    public AudioClip detectionSound;   // Glisse le son (cri, glitch, etc.) ici
 
     private Transform _playerCamera;
     private Renderer _renderer;
@@ -34,9 +36,12 @@ public class GhostObject : MonoBehaviour
         if (_playerCamera == null)
             Debug.LogError("GhostObject : Camera.main est null !");
 
+        // Vérification optionnelle de l'AudioSource
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
+
         ghostVisual.SetActive(false);
         ScheduleNextAppearance();
-        Debug.Log($"GhostObject : démarré, prochaine apparition dans {_nextAppearTime:F1}s");
     }
 
     void Update()
@@ -52,7 +57,14 @@ public class GhostObject : MonoBehaviour
         {
             if (IsPlayerLooking())
             {
-                Debug.Log("GhostObject : joueur regarde → FadeOut");
+                Debug.Log("GhostObject : joueur regarde → Son + FadeOut");
+
+                // --- AJOUT : Déclenchement du son ---
+                if (audioSource != null && detectionSound != null)
+                {
+                    audioSource.PlayOneShot(detectionSound);
+                }
+
                 StartCoroutine(FadeOut());
                 return;
             }
@@ -74,20 +86,20 @@ public class GhostObject : MonoBehaviour
 
     void Appear()
     {
-        Debug.Log("GhostObject : Appear() appelé");
         ghostVisual.SetActive(true);
-
         Color c = _renderer.material.color;
         c.a = 1f;
         _renderer.material.color = c;
-
         _isVisible = true;
         _visibleSince = Time.time;
     }
 
     IEnumerator FadeOut()
     {
+        // On passe à false immédiatement pour éviter que le son
+        // ou la coroutine ne se relance à la frame suivante
         _isVisible = false;
+
         float elapsed = 0f;
         Color c = _renderer.material.color;
 
@@ -100,7 +112,6 @@ public class GhostObject : MonoBehaviour
         }
 
         ghostVisual.SetActive(false);
-        Debug.Log("GhostObject : objet désactivé");
         ScheduleNextAppearance();
     }
 
@@ -108,6 +119,5 @@ public class GhostObject : MonoBehaviour
     {
         _timer = 0f;
         _nextAppearTime = Random.Range(minTimeBetweenAppearances, maxTimeBetweenAppearances);
-        Debug.Log($"GhostObject : prochaine apparition dans {_nextAppearTime:F1}s");
     }
 }

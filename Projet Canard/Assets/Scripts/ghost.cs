@@ -1,123 +1,122 @@
 using System.Collections;
 using UnityEngine;
 
-public class GhostObject : MonoBehaviour
+public class GhostDuck : MonoBehaviour
 {
-    [Header("Timing")]
-    public float minTimeBetweenAppearances = 1f;
-    public float maxTimeBetweenAppearances = 3f;
-    public float maxVisibleDuration = 3f;
+    [Header("Apparition")]
+    public GameObject duckVisual; // L'objet qui a le SpriteRenderer
+    public float minWaitTime = 5f;
+    public float maxWaitTime = 15f;
 
-    [Header("Détection regard")]
-    public float detectionAngle = 15f;
+    [Header("Détection Lampe")]
+    public Light flashlight;
+    public float detectionRange = 10f;
+    public float detectionAngle = 25f;
+    public LayerMask obstructionLayers;
 
-    [Header("Feedback Visuel")]
-    public float fadeOutDuration = 0.3f;
-    public GameObject ghostVisual;
+    [Header("Feedback")]
+    public AudioSource audioSource;
+    public AudioClip detectionSound;
+    public float fadeOutDuration = 0.5f;
 
-    [Header("Feedback Sonore")]
-    public AudioSource audioSource;    // Glisse l'AudioSource ici
-    public AudioClip detectionSound;   // Glisse le son (cri, glitch, etc.) ici
-
-    private Transform _playerCamera;
-    private Renderer _renderer;
+    private bool _isPresent = false;
+    private bool _isCaught = false; // Le "verrou" pour le son
     private float _timer;
-    private float _nextAppearTime;
-    private bool _isVisible;
-    private float _visibleSince;
+    private float _nextAppearanceTime;
+    private SpriteRenderer _spriteRenderer;
 
     void Start()
     {
-        _renderer = ghostVisual.GetComponent<Renderer>();
-        _playerCamera = Camera.main.transform;
+        // On récupère le SpriteRenderer au lieu du Renderer classique
+        _spriteRenderer = duckVisual.GetComponentInChildren<SpriteRenderer>();
 
-        if (_renderer == null)
-            Debug.LogError("GhostObject : aucun Renderer trouvé sur ghostVisual !");
-        if (_playerCamera == null)
-            Debug.LogError("GhostObject : Camera.main est null !");
+        duckVisual.SetActive(false);
+        ScheduleNext();
 
-        // Vérification optionnelle de l'AudioSource
-        if (audioSource == null)
-            audioSource = GetComponent<AudioSource>();
-
-        ghostVisual.SetActive(false);
-        ScheduleNextAppearance();
+        if (audioSource != null) audioSource.playOnAwake = false;
     }
 
     void Update()
     {
-        _timer += Time.deltaTime;
-
-        if (!_isVisible)
+        if (!_isPresent)
         {
-            if (_timer >= _nextAppearTime)
-                Appear();
+            _timer += Time.deltaTime;
+            if (_timer >= _nextAppearanceTime) Appear();
         }
-        else
+        else if (!_isCaught) // On ne vérifie que si on ne l'a pas déjà touché
         {
-            if (IsPlayerLooking())
-            {
-                Debug.Log("GhostObject : joueur regarde → Son + FadeOut");
-
-                // --- AJOUT : Déclenchement du son ---
-                if (audioSource != null && detectionSound != null)
-                {
-                    audioSource.PlayOneShot(detectionSound);
-                }
-
-                StartCoroutine(FadeOut());
-                return;
-            }
-
-            if (Time.time - _visibleSince >= maxVisibleDuration)
-            {
-                Debug.Log("GhostObject : durée max atteinte → FadeOut");
-                StartCoroutine(FadeOut());
-            }
+            if (IsDuckInFlashlight()) Caught();
         }
     }
 
-    bool IsPlayerLooking()
+    bool IsDuckInFlashlight()
     {
-        Vector3 directionToObject = (ghostVisual.transform.position - _playerCamera.position).normalized;
-        float angle = Vector3.Angle(_playerCamera.forward, directionToObject);
-        return angle < detectionAngle;
+        if (flashlight == null || !flashlight.enabled || !flashlight.gameObject.activeInHierarchy)
+            return false;
+
+        Vector3 directionToDuck = (duckVisual.transform.position - flashlight.transform.position);
+        float distance = directionToDuck.magnitude;
+
+        if (distance > detectionRange) return false;
+
+        float angle = Vector3.Angle(flashlight.transform.forward, directionToDuck.normalized);
+        if (angle > detectionAngle) return false;
+
+        RaycastHit hit;
+        if (Physics.Raycast(flashlight.transform.position, directionToDuck.normalized, out hit, detectionRange, obstructionLayers))
+        {
+            if (hit.transform != duckVisual.transform && !hit.transform.IsChildOf(duckVisual.transform))
+                return false;
+        }
+
+        return true;
     }
 
     void Appear()
     {
-        ghostVisual.SetActive(true);
-        Color c = _renderer.material.color;
-        c.a = 1f;
-        _renderer.material.color = c;
-        _isVisible = true;
-        _visibleSince = Time.time;
+        _isCaught = false; // Reset le verrou
+        _isPresent = true;
+        duckVisual.SetActive(true);
+
+        if (_spriteRenderer != null) {
+            Color c = _spriteRenderer.color;
+            c.a = 1f;
+            _spriteRenderer.color = c;
+        }
     }
 
-    IEnumerator FadeOut()
+    void Caught()
     {
-        // On passe à false immédiatement pour éviter que le son
-        // ou la coroutine ne se relance à la frame suivante
-        _isVisible = false;
+        _isCaught = true; // On verrouille immédiatement pour empêcher un second appel
 
+        if (audioSource != null && detectionSound != null)
+            audioSource.PlayOneShot(detectionSound);
+
+        StartCoroutine(FadeOutAndHide());
+    }
+
+    IEnumerator FadeOutAndHide()
+    {
         float elapsed = 0f;
-        Color c = _renderer.material.color;
-
         while (elapsed < fadeOutDuration)
         {
             elapsed += Time.deltaTime;
-            c.a = Mathf.Lerp(1f, 0f, elapsed / fadeOutDuration);
-            _renderer.material.color = c;
+            if (_spriteRenderer != null) {
+                Color c = _spriteRenderer.color;
+                c.a = Mathf.Lerp(1f, 0f, elapsed / fadeOutDuration);
+                _spriteRenderer.color = c;
+            }
             yield return null;
         }
 
-        ghostVisual.SetActive(false);
-        ScheduleNextAppearance();
+        duckVisual.SetActive(false);
+        _isPresent = false;
+        ScheduleNext();
     }
 
-    void ScheduleNextAppearance()
+    void ScheduleNext()
     {
         _timer = 0f;
-        _nextAppearTime = Random.Range(minTimeBetweenAppearances, maxTimeBetweenAppearances);
+        _nextAppearanceTime = Random.Range(minWaitTime, maxWaitTime);
     }
 }

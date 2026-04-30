@@ -68,7 +68,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 3f3caa90a3cdf364090dded7746f1ebc, type: 2}
+  - {fileID: 2100000, guid: 883c2eb8300b67749b3f18400a699fe8, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -264,7 +264,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4276084008816218927}
-  - component: {fileID: 740797136189714886}
+  - component: {fileID: 1290777440113071937}
   m_Layer: 0
   m_Name: Duck
   m_TagString: Untagged
@@ -289,7 +289,7 @@ Transform:
   - {fileID: 3943638863420695642}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &740797136189714886
+--- !u!114 &1290777440113071937
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -298,14 +298,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 8892756315208165789}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ade60f1f1d1e67749ae20c5a5f1dd4dc, type: 3}
+  m_Script: {fileID: 11500000, guid: 6dc1862b4fc55f84b952289449874cba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  minTimeBetweenAppearances: 10
-  maxTimeBetweenAppearances: 15
-  maxVisibleDuration: 1
-  detectionAngle: 15
-  fadeOutDuration: 0.3
-  ghostVisual: {fileID: 546700403563188190}
+  duckQuad: {fileID: 546700403563188190}
+  minWaitTime: 5
+  maxWaitTime: 15
+  flashlight: {fileID: 0}
+  detectionRange: 10
+  detectionAngle: 25
+  obstructionLayers:
+    serializedVersion: 2
+    m_Bits: 0
   audioSource: {fileID: 8145846408162291377}
   detectionSound: {fileID: 8300000, guid: a8a1462e53a19ee49a270712dba193bf, type: 3}
+  soundVolume: 1
+  fadeOutDuration: 0.5
